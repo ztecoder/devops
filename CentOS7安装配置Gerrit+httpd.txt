@@ -67,27 +67,30 @@ vim /etc/httpd/conf/httpd.conf
       AuthName "Gerrit Code Review"
       Require valid-user
       AuthBasicProvider file
-      AuthUserFile /etc/httpd/passwords
+      AuthUserFile /etc/httpd/passwords #这个密码文件要使用htpasswd命令创建
     </Location>
 
     AllowEncodedSlashes On
     ProxyPass / http://192.168.64.128:8082/ #这里要和gerrit.config的proxy配置一致
 </VirtualHost>
 
-4、防火墙开放端口，以及http服务
+4、创建passwords文件
+htpasswd -cb /etc/httpd/passwords admin admin
+
+5、防火墙开放端口，以及http服务
 firewall-cmd --zone=public --add-port=8082/tcp --permanent
 firewall-cmd --zone=public --add-port=9000/tcp --permanent
 firewall-cmd --zone=public --add-service=http --permanent
 firewall-cmd --reload
 
-5、最坑了的一步来啦(花了至少3个小时才搞定)
+6、最坑了的一步来啦(花了至少3个小时才搞定)
 上面几步全部配置完以后，访问http://192.168.64.128:9000/还是报Service Unavailable
 查了半天，才知道要开启打开http网络访问：
 setsebool -P httpd_can_network_connect 1
 可以用如下命令查看http网络访问是否打开：
 getsebool -a |grep httpd_can_network_connect 
 
-6、启动/关闭/重启httpd
+7、启动/关闭/重启httpd
 systemctl start httpd
 systemctl restart httpd
 systemctl stop httpd
