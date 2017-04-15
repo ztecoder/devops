@@ -1,5 +1,5 @@
 一、gerrit环境
-1、下载gerrit-2.13.7.war, https://www.gerritcodereview.com/
+1、下载gerrit-2.13.7.war, https://www.gerritcodereview.com/releases/README.md
 2、安装gerrit:
 mkdir -p /gerrit/gerrit_server
 将下载的gerrit-2.13.7.war拷贝到/gerrit/gerrit_server目录下，执行以下命令安装
