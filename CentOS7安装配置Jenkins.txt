@@ -1,0 +1,30 @@
+﻿1、CentOS7安装Jenkins
+下载jenkins-2.46.1-1.1.noarch.rpm
+rpm -ivh jenkins-2.46.1-1.1.noarch.rpm
+
+2、启动/关闭jenkins
+service jenkins start
+service jenkins stop
+
+参考以下链接：
+http://blog.csdn.net/dandanzmc/article/details/51935311
+http://www.jb51.net/article/98301.htm
+
+3、Jenkins强制设置语言为中文
+安装Locale plugin，并将Default Language设置为zh_CN
+参考以下链接：
+http://www.cnblogs.com/EasonJim/p/6373769.html
+
+4、Jenkins节点配置页面,启动方法没有"Launch agent via Java Web Start"解决方法?
+参考以下链接：
+http://www.cnblogs.com/testyao/p/6484916.html
+
+5、客户端无法连接http://192.168.64.128:8080/
+6、从节点无法通过JavaWebStart连接Jenkins Server
+以上两个问题都是因为Jenkins服务器的防火墙没有开放相关端口，CentOS7受用firewalld作为防火墙，使用以下命令开放端口：
+firewall-cmd --zone=public --list-ports //查看已开放端口
+firewall-cmd --get-active-zones,得到激活的zone，例如public
+firewall-cmd --zone=public --add-port=8081/tcp --permanent
+firewall-cmd --reload
+参考以下链接：
+http://www.cnblogs.com/moxiaoan/p/5683743.html

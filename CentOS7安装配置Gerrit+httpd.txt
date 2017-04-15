@@ -1,0 +1,96 @@
+一、gerrit环境
+1、下载gerrit-2.13.7.war, https://www.gerritcodereview.com/
+2、安装gerrit:
+mkdir -p /gerrit/gerrit_server
+将下载的gerrit-2.13.7.war拷贝到/gerrit/gerrit_server目录下，执行以下命令安装
+java -jar gerrit-2.13.7.war init --batch -d ./review_site
+安装过程中有一些配置，基本上都可以选择默认值，安装完成再修改配置文件
+vim /gerrit/gerrit_server/review_site/etc/gerrit.config
+3、配置gerrit:
+[gerrit]
+        basePath = git
+        serverId = 97dabc99-ea25-4ba3-9b3d-e6d3ce9f224f
+        canonicalWebUrl = http://192.168.64.128:9000/ #访问gerrit的WebURL
+[database]
+        type = h2
+        database = /gerrit/gerrit_server/review_site/db/ReviewDB
+[auth]
+        type = HTTP #修改为HTTP
+[receive]
+        enableSignedPush = true
+[sendemail]
+        smtpServer = smtp.qq.com
+        smtpUser = ztecoder@qq.com
+        from = ztecoder@qq.com
+        smtppass = 100fenOK
+[container]
+        user = root
+        javaHome = /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.102-4.b14.el7.x86_64/jre
+[sshd]
+        listenAddress = *:29418
+[httpd]
+        listenUrl = proxy-http://192.168.64.128:8082/ #注意proxy配置和canonicalWebUrl不同，后面在httpd中配置反向代理
+[cache]
+        directory = cache
+
+4、启动/停止/重启gerrit
+cd /gerrit/gerrit_server/review_site/bin
+gerrit.sh start
+gerrit.sh stop
+gerrit.sh restart
+
+
+二、httpd环境
+1、安装httpd
+yum install -y httpd
+
+2、配置侦听端口
+vim /etc/httpd/conf/httpd.conf
+在Listen 80后增加Listen 9000，奇怪的是侦听9000端口可以，侦听其他端口例如8081，httpd就起不来，报绑定socket端口失败
+
+3、配置反向代理
+在/etc/httpd/conf.d/目录下新增配置文件httpd-proxy.conf(在httpd.conf中会自动IncludeOptional conf.d目录下所有的*.conf文件)
+<VirtualHost 192.168.64.128:9000> #访问gerrit的WebURL
+    ServerName 192.168.64.128
+
+    ProxyRequests Off
+    ProxyVia Off
+    ProxyPreserveHost On
+
+    <Proxy *>
+          Order deny,allow
+          Allow from all
+    </Proxy>
+
+    <Location /login/>
+      AuthType Basic
+      AuthName "Gerrit Code Review"
+      Require valid-user
+      AuthBasicProvider file
+      AuthUserFile /etc/httpd/passwords
+    </Location>
+
+    AllowEncodedSlashes On
+    ProxyPass / http://192.168.64.128:8082/ #这里要和gerrit.config的proxy配置一致
+</VirtualHost>
+
+4、防火墙开放端口，以及http服务
+firewall-cmd --zone=public --add-port=8082/tcp --permanent
+firewall-cmd --zone=public --add-port=9000/tcp --permanent
+firewall-cmd --zone=public --add-service=http --permanent
+firewall-cmd --reload
+
+5、最坑了的一步来啦(花了至少3个小时才搞定)
+上面几步全部配置完以后，访问http://192.168.64.128:9000/还是报Service Unavailable
+查了半天，才知道要开启打开http网络访问：
+setsebool -P httpd_can_network_connect 1
+可以用如下命令查看http网络访问是否打开：
+getsebool -a |grep httpd_can_network_connect 
+
+6、启动/关闭/重启httpd
+systemctl start httpd
+systemctl restart httpd
+systemctl stop httpd
+设置开机启动httpd
+systemctl enable httpd
+
